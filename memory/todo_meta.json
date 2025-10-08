@@ -1,0 +1,34 @@
+{
+  "todos": {
+    "Coordinator": {
+      "1": {
+        "id": "1",
+        "content": "Add code preview window to AI Code Generator",
+        "details": "1. Create a modal/popup window that displays generated Python code with syntax highlighting. 2. Add preview functionality after code generation completes. 3. Include proper code formatting and readability features.",
+        "status": "completed",
+        "priority": "high"
+      },
+      "2": {
+        "id": "2",
+        "content": "Integrate MiniMax agent for code editing",
+        "details": "1. Connect to MiniMax API for code editing capabilities. 2. Create interface for clients to request code modifications. 3. Implement real-time code editing suggestions and improvements.",
+        "status": "pending",
+        "priority": "high"
+      },
+      "3": {
+        "id": "3",
+        "content": "Build interactive editing interface",
+        "details": "1. Add text input for client editing requests. 2. Create edit/modify buttons in preview window. 3. Implement before/after code comparison view. 4. Add save/apply changes functionality.",
+        "status": "pending",
+        "priority": "high"
+      },
+      "4": {
+        "id": "4",
+        "content": "Deploy and test enhanced features",
+        "details": "1. Deploy updated website with new preview and editing features. 2. Test code preview window functionality. 3. Verify MiniMax integration works properly. 4. Test complete workflow from generation to editing.",
+        "status": "pending",
+        "priority": "medium"
+      }
+    }
+  }
+}

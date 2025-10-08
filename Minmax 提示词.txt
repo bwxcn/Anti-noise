@@ -1,0 +1,11 @@
+create an ai investment website, according to the request of the client prompt, using vibe coding to create the python script for client
+
+1. client should use e-mail adress to log in,  use supabase to creat different client file.
+2. creat a professional website, which could let client input their prompt
+3. genenrate to do list for client, wait comfirm or revise
+4. according to to do list, start vibecoding, generate the result
+
+to do list
+find recent 1 year historical data of s&p 500 and US 10Y Treasury bond price, use yahoo finance historical date or other website, generate interactive chart to compare the difference between 2 rows of data, if cannot find the complete data,then feedback "no data source"
+
+https://xdx7x9ztpazp.space.minimax.io/
