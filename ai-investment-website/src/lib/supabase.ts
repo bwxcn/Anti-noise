@@ -1,19 +1,76 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Get Supabase configuration from environment
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://qsknfmycjwnkvgnwoqpq.supabase.co'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFza25mbXljandua3ZnbndvcXBxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ2NDIzNzYsImV4cCI6MjA3MDIxODM3Nn0.60mKLGrETHGhlck6f7UM4shkl750DueRMuDN9Bc2Ui8'
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase configuration')
+// Get Supabase configuration from environment or global config
+// 支持开发环境和生产环境配置
+const getSupabaseConfig = () => {
+  // 优先使用环境变量（开发环境）
+  if (import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY) {
+    return {
+      url: import.meta.env.VITE_SUPABASE_URL,
+      key: import.meta.env.VITE_SUPABASE_ANON_KEY
+    }
+  }
+  
+  // 生产环境使用全局配置
+  if (typeof window !== 'undefined' && window.APP_CONFIG) {
+    return {
+      url: window.APP_CONFIG.supabaseUrl,
+      key: window.APP_CONFIG.supabaseAnonKey
+    }
+  }
+  
+  // 回退到环境变量或抛出错误
+  const url = import.meta.env.VITE_SUPABASE_URL
+  const key = import.meta.env.VITE_SUPABASE_ANON_KEY
+  
+  if (!url || !key) {
+    console.error('Missing Supabase configuration')
+    throw new Error('Missing Supabase URL and anonymous key configuration.')
+  }
+  
+  return { url, key }
 }
 
-// Create Supabase client instance
+const { url: supabaseUrl, key: supabaseAnonKey } = getSupabaseConfig()
+
+// Create Supabase client instance with enhanced CORS handling
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: true,
+    flowType: 'pkce', // 使用 PKCE 流程，更适合生产环境
+    storage: {
+      // 使用更安全的存储方式
+      getItem: (key) => {
+        try {
+          return localStorage.getItem(key)
+        } catch (error) {
+          console.warn('Failed to get item from storage:', error)
+          return null
+        }
+      },
+      setItem: (key, value) => {
+        try {
+          localStorage.setItem(key, value)
+        } catch (error) {
+          console.warn('Failed to set item in storage:', error)
+        }
+      },
+      removeItem: (key) => {
+        try {
+          localStorage.removeItem(key)
+        } catch (error) {
+          console.warn('Failed to remove item from storage:', error)
+        }
+      }
+    }
+  },
+  global: {
+    // 添加 CORS 和代理支持
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest'
+    }
   }
 })
 

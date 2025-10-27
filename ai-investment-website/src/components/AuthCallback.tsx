@@ -11,27 +11,71 @@ export function AuthCallback() {
       try {
         // Get the hash fragment from the URL
         const hashFragment = window.location.hash
+        const searchParams = new URLSearchParams(window.location.search)
         
         console.log('Auth callback - processing hash:', hashFragment)
+        console.log('Auth callback - processing search params:', searchParams.toString())
 
-        if (hashFragment && hashFragment.length > 0) {
-          // Exchange the auth code for a session
-          const { data, error } = await supabase.auth.exchangeCodeForSession(hashFragment)
+        // Handle OAuth callback with access_token in hash
+        if (hashFragment && hashFragment.includes('#access_token=')) {
+          // Extract the access token from the hash
+          const url = new URL(window.location.href)
+          const accessToken = url.hash.split('#access_token=')[1]?.split('&')[0]
+          const refreshToken = url.hash.split('refresh_token=')[1]?.split('&')[0]
+          
+          if (accessToken && refreshToken) {
+            // Set the session manually
+            const { data, error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            })
 
-          if (error) {
-            console.error('Error exchanging code for session:', error)
-            toast.error(error.message || 'Authentication failed')
-            // Redirect to login with error
-            window.location.href = '/login?error=' + encodeURIComponent(error.message)
-            return
+            if (error) {
+              console.error('Error setting session:', error)
+              toast.error(error.message || 'Authentication failed')
+              // Redirect to login with error
+              window.location.href = '/?error=' + encodeURIComponent(error.message)
+              return
+            }
+
+            if (data.session) {
+              console.log('Successfully authenticated user:', data.session.user?.email)
+              toast.success('Authentication successful!')
+              // Successfully signed in, redirect to dashboard
+              // Use replaceState to avoid full page reload
+              window.history.replaceState(null, '', '/dashboard')
+              // Force a re-render by reloading the app
+              window.dispatchEvent(new PopStateEvent('popstate'))
+              return
+            }
           }
+        }
 
-          if (data.session) {
-            console.log('Successfully authenticated user:', data.session.user.email)
-            toast.success('Email verified successfully!')
-            // Successfully signed in, redirect to dashboard
-            window.location.href = '/dashboard'
-            return
+        // Handle email verification or magic link
+        if (searchParams.has('code')) {
+          const code = searchParams.get('code')
+          if (code) {
+            // Exchange the auth code for a session
+            const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+
+            if (error) {
+              console.error('Error exchanging code for session:', error)
+              toast.error(error.message || 'Authentication failed')
+              // Redirect to login with error
+              window.location.href = '/?error=' + encodeURIComponent(error.message)
+              return
+            }
+
+            if (data.session) {
+              console.log('Successfully authenticated user:', data.session.user?.email)
+              toast.success('Email verified successfully!')
+              // Successfully signed in, redirect to dashboard
+              // Use replaceState to avoid full page reload
+              window.history.replaceState(null, '', '/dashboard')
+              // Force a re-render by reloading the app
+              window.dispatchEvent(new PopStateEvent('popstate'))
+              return
+            }
           }
         }
 
@@ -41,32 +85,35 @@ export function AuthCallback() {
         if (userError) {
           console.error('Error getting user:', userError)
           toast.error('Authentication verification failed')
-          window.location.href = '/login'
+          window.location.href = '/?error=auth_failed'
           return
         }
 
         if (user) {
           console.log('User already authenticated:', user.email)
-          window.location.href = '/dashboard'
+          // Use replaceState to avoid full page reload
+          window.history.replaceState(null, '', '/dashboard')
+          // Force a re-render by reloading the app
+          window.dispatchEvent(new PopStateEvent('popstate'))
           return
         }
 
         // If we get here, no valid session was found
         console.log('No valid session found, redirecting to login')
         toast.error('No valid authentication session found')
-        window.location.href = '/login'
+        window.location.href = '/?error=no_session'
 
       } catch (error: any) {
         console.error('Auth callback error:', error)
-        toast.error('Authentication processing failed')
-        window.location.href = '/login?error=' + encodeURIComponent('Authentication failed')
+        toast.error('Authentication processing failed: ' + (error.message || 'Unknown error'))
+        window.location.href = '/?error=' + encodeURIComponent('Authentication failed: ' + (error.message || 'Unknown error'))
       } finally {
         setIsProcessing(false)
       }
     }
 
     // Add a small delay to ensure the page is fully loaded
-    const timer = setTimeout(handleAuthCallback, 500)
+    const timer = setTimeout(handleAuthCallback, 100)
     
     return () => clearTimeout(timer)
   }, [])
@@ -88,13 +135,13 @@ export function AuthCallback() {
           </div>
           
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            {isProcessing ? 'Verifying your email...' : 'Email verified!'}
+            {isProcessing ? 'Processing authentication...' : 'Authentication complete!'}
           </h2>
           
           <p className="text-gray-600 mb-6">
             {isProcessing 
-              ? 'Please wait while we verify your email address and set up your account.' 
-              : 'Your email has been verified successfully. Redirecting to your dashboard...'
+              ? 'Please wait while we process your authentication.' 
+              : 'Redirecting to your dashboard...'
             }
           </p>
           

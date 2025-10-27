@@ -1,0 +1,7 @@
+# Netlify-style redirects for EdgeOne Pages
+/api/*  https://qsknfmycjwnkvgnwoqpq.supabase.co/:splat  200
+/auth/* https://qsknfmycjwnkvgnwoqpq.supabase.co/:splat  200
+/functions/* https://qsknfmycjwnkvgnwoqpq.supabase.co/:splat  200
+
+# SPA fallback
+/*    /index.html   200
